@@ -5,7 +5,7 @@ use std::fs::File;
 use std::env;
 use std::process;
 
-use chip8::cpu::CPU;
+use chip8::CPU;
 
 type Instruction = u16;
 

@@ -11,4 +11,8 @@ impl Keypad {
         // TODO: check bounds of key
         true
     }
+
+    pub fn wait_for_key_down(&self) -> u8 {
+        0
+    }
 }
