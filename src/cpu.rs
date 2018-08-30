@@ -1,6 +1,8 @@
 use keypad::Keypad;
 use screen::Screen;
 
+use wasm_bindgen::prelude::*;
+
 const SPRITES: [u8; 80] = [
   0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
   0x20, 0x60, 0x20, 0x20, 0x70, // 1
@@ -20,6 +22,7 @@ const SPRITES: [u8; 80] = [
   0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 ];
 
+#[wasm_bindgen]
 pub struct CPU {
     /// 4096 bytes of RAM. The first 512 bytes are where the original interpreter
     /// was located, so most programs start at location 512
@@ -47,6 +50,7 @@ pub struct CPU {
     screen: Screen
 }
 
+#[wasm_bindgen]
 impl CPU {
     /// Initialize a new CPU with undefined state. The user should call reset()
     /// on the new instance before using it
@@ -85,7 +89,6 @@ impl CPU {
         self.sp = 0;
     }
 
-
     /// Execute a single cycle of the CPU
     pub fn cycle(&mut self) {
        if self.delay > 0 {
@@ -98,7 +101,9 @@ impl CPU {
        let next_instruction = self.read_instruction();
        self.process_instruction(next_instruction);
     }
+}
 
+impl CPU {
     /// Read a single instruction at the program counter in memory
     pub fn read_instruction(&self) -> u16 {
         (self.memory[self.pc as usize] as u16) << 8 |

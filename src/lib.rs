@@ -5,6 +5,8 @@
 //! guide and implements all 35 of the original CHIP-8 instructions.
 //! 
 //! [1]: http://mattmik.com/files/chip8/mastering/chip8.html
+extern crate wasm_bindgen;
+
 pub use self::cpu::CPU;
 
 pub mod cpu;

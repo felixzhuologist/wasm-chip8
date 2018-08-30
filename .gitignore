@@ -1,2 +1,7 @@
 /target
 **/*.rs.bk
+
+node_modules/
+chip8.js
+chip8.d.ts
+chip8_bg.wasm
