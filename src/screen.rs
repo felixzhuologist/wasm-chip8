@@ -32,6 +32,10 @@ impl Screen {
         }
     }
 
+    pub fn get_pixel(&self, x: usize, y: usize) -> bool {
+        ((self.pixels[y] >> (63 - x)) & 1) == 1
+    }
+
     /// Draw the provided sprite with the top left corner at (x, y).
     /// If the sprite would be clipped, it does not get drawn (TODO: wrap instead)
     pub fn draw_sprite(&mut self, x: usize, y: usize, sprite: &[u8]) -> bool {
@@ -58,6 +62,16 @@ impl Screen {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    #[test]
+    fn get_pixel() {
+        let mut screen = Screen::new();
+        screen.pixels[0] |= 1 << 63;
+        assert!(screen.get_pixel(0, 0));
+
+        screen.pixels[10] |= 1;
+        assert!(screen.get_pixel(63, 10));
+    }
 
     #[test]
     fn old_byte() {

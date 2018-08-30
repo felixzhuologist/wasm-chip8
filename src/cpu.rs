@@ -42,9 +42,9 @@ pub struct CPU {
     /// call stack
     stack: [u16; 16],
     /// 16 key keypad
-    keypad: Keypad,
+    pub keypad: Keypad,
     /// 64x32 pixel monochrome display
-    screen: Screen
+    pub screen: Screen
 }
 
 impl CPU {
@@ -194,7 +194,12 @@ impl CPU {
                 }
             },
             (0xF, _, 0, 7) => self.v[x] = self.delay,
-            (0xF, _, 0, 0xA) => self.v[x] = self.keypad.wait_for_key_down(),
+            (0xF, _, 0, 0xA) => {
+                match self.keypad.get_first_key_down() {
+                    Some(key) => self.v[x] = key,
+                    None => self.pc -= 2 // rerun this instruction again
+                }
+            },
             (0xF, _, 1, 5) => self.delay = self.v[x],
             (0xF, _, 1, 8) => self.sound = self.v[x],
             (0xF, _, 1, 0xE) => self.i += self.v[x] as u16,

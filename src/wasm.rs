@@ -24,7 +24,7 @@ impl CPUWrapper {
         CPUWrapper { cpu: ::cpu::CPU::new() }
     }
 
-    /// Reset the CPU and its display to their initial states
+    /// Reset the CPU and its screen to their initial states
     pub fn reset(&mut self) {
         self.cpu.reset();
     }
@@ -42,6 +42,18 @@ impl CPUWrapper {
             next_instruction,
             self.cpu.get_pc());
         self.cpu.process_instruction(next_instruction);
+    }
+
+    pub fn key_down(&mut self, key: u8) {
+        self.cpu.keypad.key_down(key);
+    }
+
+    pub fn key_up(&mut self, key: u8) {
+        self.cpu.keypad.key_up(key);
+    }
+
+    pub fn get_pixel(&self, x: usize, y: usize) -> bool {
+        self.cpu.screen.get_pixel(x, y)
     }
 }
 

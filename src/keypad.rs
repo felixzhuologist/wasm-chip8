@@ -14,14 +14,13 @@ impl Keypad {
         self.keys[key as usize]
     }
 
-    pub fn wait_for_key_down(&self) -> u8 {
-        loop {
-            for i in 0..16 {
-                if self.is_key_down(i) {
-                    return i
-                }
+    pub fn get_first_key_down(&self) -> Option<u8> {
+        for i in 0..16 {
+            if self.is_key_down(i) {
+                return Some(i)
             }
         }
+        None
     }
 
     pub fn key_down(&mut self, key: u8) {
