@@ -1,34 +1,55 @@
 use keypad::Keypad;
 use screen::Screen;
 
+const SPRITES: [u8; 80] = [
+  0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
+  0x20, 0x60, 0x20, 0x20, 0x70, // 1
+  0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
+  0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
+  0x90, 0x90, 0xF0, 0x10, 0x10, // 4
+  0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
+  0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
+  0xF0, 0x10, 0x20, 0x40, 0x40, // 7
+  0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
+  0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
+  0xF0, 0x90, 0xF0, 0x90, 0x90, // A
+  0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
+  0xF0, 0x80, 0x80, 0x80, 0xF0, // C
+  0xE0, 0x90, 0x90, 0x90, 0xE0, // D
+  0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
+  0xF0, 0x80, 0xF0, 0x80, 0x80  // F
+];
+
 pub struct CPU {
     /// 4096 bytes of RAM. The first 512 bytes are where the original interpreter
     /// was located, so most programs start at location 512
-    pub memory: [u8; 4096],
+    memory: [u8; 4096],
     /// 16 general purpose 8-bit registers `V0` through `VF`
-    pub v: [u8; 16],
+    v: [u8; 16],
     /// 16-bit register used to index into memory
-    pub i: u16,
+    i: u16,
     /// delay timer
-    pub delay: u8,
+    delay: u8,
     /// sound timer
-    pub sound: u8,
+    sound: u8,
     /// the program counter is an index into RAM pointing to the start of
     /// the next instruction. since instructions are 16 bits, the pc should
     /// always be even (otherwise it would be pointing to the middle of an
     /// instruction)
-    pub pc: u16,
+    pc: u16,
     /// stack pointer
-    pub sp: u8,
+    sp: u8,
     /// call stack
-    pub stack: [u16; 16],
+    stack: [u16; 16],
     /// 16 key keypad
-    pub keypad: Keypad,
+    keypad: Keypad,
     /// 64x32 pixel monochrome display
-    pub screen: Screen
+    screen: Screen
 }
 
 impl CPU {
+    /// Initialize a new CPU with undefined state. The user should call reset()
+    /// on the new instance before using it
     pub fn new() -> CPU {
         CPU {
             memory: [0; 4096],
@@ -42,6 +63,46 @@ impl CPU {
             keypad: Keypad::new(),
             screen: Screen::new()
         }
+    }
+
+    /// Reset the CPU and its display to their initial states
+    pub fn reset(&mut self) {
+        for i in 0..4096 {
+            self.memory[i] = 0;
+        }
+        for i in 0..80 {
+            self.memory[i] = SPRITES[i];
+        }
+        for i in 0..16 {
+            self.v[i] = 0;
+            self.stack[i] = 0;
+        }
+        self.i = 0;
+        self.screen.clear();
+        self.delay = 255;
+        self.sound = 255;
+        self.pc = 512;
+        self.sp = 0;
+    }
+
+
+    /// Execute a single cycle of the CPU
+    pub fn cycle(&mut self) {
+       if self.delay > 0 {
+        self.delay -= 1;
+       } 
+       if self.sound > 0 {
+        self.sound -= 1;
+       }
+
+       let next_instruction = self.read_instruction();
+       self.process_instruction(next_instruction);
+    }
+
+    /// Read a single instruction at the program counter in memory
+    pub fn read_instruction(&self) -> u16 {
+        (self.memory[self.pc as usize] as u16) << 8 |
+        (self.memory[(self.pc + 1) as usize] as u16)
     }
 
     /// Process a single instruction and update the state of the CPU.
@@ -132,7 +193,8 @@ impl CPU {
             (0xF, _, 1, 5) => self.delay = self.v[x],
             (0xF, _, 1, 8) => self.sound = self.v[x],
             (0xF, _, 1, 0xE) => self.i += self.v[x] as u16,
-            (0xF, _, 2, 9) => println!("LD {:#x?}", x),
+            // TODO check that 0 <= vX <= 16
+            (0xF, _, 2, 9) => self.i = self.v[x] as u16 * 5,
             (0xF, _, 3, 3) => {
                 // TODO: check bounds on i register
                 self.memory[self.i as usize] = self.v[x] % 10;
