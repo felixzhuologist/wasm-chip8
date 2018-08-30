@@ -1,9 +1,15 @@
-Print out the instructions in a rom:
+Install dependencies:
 ```
-cargo run roms/PONG
+npm install
 ```
 
 View the documentation:
 ```
 cargo doc --open
 ```
+
+Build and run:
+```
+./build.sh
+```
+And go to localhost:8080
