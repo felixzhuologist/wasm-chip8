@@ -34,14 +34,23 @@ impl CPUWrapper {
     }
 
     /// Execute a single cycle of the CPU
-    pub fn cycle(&mut self) {
-        self.cpu.decrement_timers();
+    pub fn cycle(&mut self, debug: bool) {
         let next_instruction = self.cpu.read_instruction();
-        log!(
-            "Processing instruction {:#X} at location {:?}",
-            next_instruction,
-            self.cpu.get_pc());
+        if debug {
+            for i in 0..16 {
+                log!("V{}={}", i, self.cpu.v[i]);
+            }
+            log!("I={}", self.cpu.i);
+            log!(
+                "Processing instruction {:#X} at location {:?}",
+                next_instruction,
+                self.cpu.get_pc());
+        }
         self.cpu.process_instruction(next_instruction);
+    }
+
+    pub fn decrement_timers(&mut self) {
+        self.cpu.decrement_timers();
     }
 
     pub fn key_down(&mut self, key: u8) {

@@ -6,6 +6,7 @@
 //! 
 //! [1]: http://mattmik.com/files/chip8/mastering/chip8.html
 extern crate wasm_bindgen;
+extern crate js_sys;
 
 pub use self::wasm::CPUWrapper;
 

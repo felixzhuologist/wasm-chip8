@@ -3,8 +3,8 @@ const wasm = import('./chip8_bg')
 
 const CELL_SIZE = 5;
 const GRID_COLOR = "#CCCCCC";
-const PIXEL_ON_COLOR = "#FFFFFF";
-const PIXEL_OFF_COLOR = "#000000";
+const PIXEL_OFF_COLOR = "#FFFFFF";
+const PIXEL_ON_COLOR = "#000000";
 
 // maps key code to hex keypad index
 const KEYMAP = {
@@ -34,7 +34,9 @@ const { memory } = await wasm;
 const cpu = CPUWrapper.new();
 cpu.reset();
 
-const canvas = document.getElementById("chip8-canvas");
+const canvas = document.getElementById('chip8-canvas');
+const playPauseButton = document.getElementById('play-pause');
+const stepButton = document.getElementById('step');
 const width = 64;
 const height = 32;
 canvas.height = (CELL_SIZE + 1) * height + 1;
@@ -42,7 +44,7 @@ canvas.width = (CELL_SIZE + 1) * width + 1;
 const ctx = canvas.getContext('2d');
 
 const loadRom = async () =>
-  new Uint8Array(await fetch('roms/PONG').then(resp => resp.arrayBuffer()));
+  new Uint8Array(await fetch('roms/WIPEOFF').then(resp => resp.arrayBuffer()));
 
 const addKeyListeners = () => {
   document.addEventListener('keydown', event => {
@@ -92,17 +94,50 @@ const drawScreen = () => {
     ctx.stroke();
 }
 
-const renderLoop = () => {
-  cpu.cycle();
+const play = () => {
+  playPauseButton.textContent = "⏸";
+  renderLoop();
+}
+
+const pause = () => {
+  playPauseButton.textContent = "▶";
+  cancelAnimationFrame(animationId);
+  animationId = null;
+}
+
+const step = () => {
+  cpu.cycle(true);
   drawScreen();
-  requestAnimationFrame(renderLoop);
+}
+
+let animationId = null;
+const isPaused = () => animationId === null;
+const renderLoop = () => {
+  for (let i = 0; i < 10; i++) {
+    cpu.cycle();
+  }
+  cpu.decrement_timers();
+  drawScreen();
+  animationId = requestAnimationFrame(renderLoop);
+}
+
+const addPlayPauseListener = () => {
+  playPauseButton.addEventListener("click", event => {
+    if (isPaused()) {
+      play();
+    } else {
+      pause();
+    }
+  })
+  stepButton.addEventListener("click", event => step());
 }
 
 cpu.load_rom(await loadRom());
 drawGrid();
 drawScreen();
 addKeyListeners();
-requestAnimationFrame(renderLoop);
+addPlayPauseListener();
+pause();
 
 }
 

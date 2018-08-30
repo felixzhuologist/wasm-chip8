@@ -25,9 +25,9 @@ pub struct CPU {
     /// was located, so most programs start at location 512
     memory: [u8; 4096],
     /// 16 general purpose 8-bit registers `V0` through `VF`
-    v: [u8; 16],
+    pub v: [u8; 16],
     /// 16-bit register used to index into memory
-    i: u16,
+    pub i: u16,
     /// delay timer
     delay: u8,
     /// sound timer
@@ -177,11 +177,13 @@ impl CPU {
             (9, .., 0) => self.pc += if self.v[x] != self.v[y] { 2 } else { 0 },
             (0xA, ..) => self.i = nnn,
             (0xB, ..) => self.pc = nnn + (self.v[0] as u16),
-            // TODO: randomize
-            (0xC, ..) => self.v[x] = 0xFF & kk,
+            (0xC, ..) => self.v[x] = (::js_sys::Math::random() * 255.0) as u8 & kk,
             (0xD, ..) => {
                 let (start, end) = (self.i as usize, (self.i + (n as u16)) as usize);
-                self.v[0xF] = self.screen.draw_sprite(x, y, &self.memory[start .. end]) as u8;
+                self.v[0xF] = self.screen.draw_sprite(
+                    self.v[x as usize] as usize,
+                    self.v[y as usize] as usize,
+                    &self.memory[start .. end]) as u8;
             },
             (0xE, _, 9, 0xE) => {
                 if self.keypad.is_key_down(self.v[x]) {
