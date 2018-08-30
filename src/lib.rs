@@ -7,8 +7,9 @@
 //! [1]: http://mattmik.com/files/chip8/mastering/chip8.html
 extern crate wasm_bindgen;
 
-pub use self::cpu::CPU;
+pub use self::wasm::CPUWrapper;
 
 pub mod cpu;
+pub mod wasm;
 pub mod keypad;
 pub mod screen;

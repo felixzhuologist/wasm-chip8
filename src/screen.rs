@@ -43,11 +43,12 @@ impl Screen {
         }
 
         let mut collision = false;
-        for i in y..y + sprite_height {
+        for i in 0..sprite_height {
             // any bit being set means that we would be unsetting a set pixel
-            let overwritten_bits = get_old_byte(self.pixels[i], x, sprite_width) & sprite[i];
+            let overwritten_bits = 
+                get_old_byte(self.pixels[i + y], x, sprite_width) & sprite[i];
             collision = collision || overwritten_bits > 0;
-            self.pixels[i] ^= get_mask(sprite[i], x);
+            self.pixels[i + y] ^= get_mask(sprite[i], x);
         }
 
         collision
@@ -104,5 +105,11 @@ mod test {
         for i in 5..9 {
             assert_eq!(screen.pixels[i], 0);    
         }
+    }
+
+    #[test]
+    fn sprite_y() {
+        let mut screen = Screen::new();
+        screen.draw_sprite(5, 10, &[1]);
     }
 }
