@@ -26,6 +26,32 @@ const KEYMAP = {
   86: 0xf
 };
 
+const ROMS = [
+  '15PUZZLE',
+  'BLINKY',
+  'BLITZ',
+  'BRIX',
+  'CONNECT4',
+  'GUESS',
+  'HIDDEN',
+  'INVADERS',
+  'KALEID',
+  'MAZE',
+  'MERLIN',
+  'MISSILE',
+  'PONG',
+  'PONG2',
+  'PUZZLE',
+  'SYZYGY',
+  'TANK',
+  'TETRIS',
+  'TICTAC',
+  'UFO',
+  'VBRIX',
+  'VERS',
+  'WIPEOFF',
+]
+
 const run = async () => {
 
 const { CPUWrapper } = await rust;
@@ -37,14 +63,20 @@ cpu.reset();
 const canvas = document.getElementById('chip8-canvas');
 const playPauseButton = document.getElementById('play-pause');
 const stepButton = document.getElementById('step');
+const romSelector = document.getElementById('roms')
 const width = 64;
 const height = 32;
 canvas.height = (CELL_SIZE + 1) * height + 1;
 canvas.width = (CELL_SIZE + 1) * width + 1;
 const ctx = canvas.getContext('2d');
 
-const loadRom = async () =>
-  new Uint8Array(await fetch('roms/WIPEOFF').then(resp => resp.arrayBuffer()));
+const loadRom = async (romName) => {
+  pause();
+  cpu.reset();
+  let rom = new Uint8Array(
+    await fetch(`roms/${romName}`).then(resp => resp.arrayBuffer()));
+  cpu.load_rom(rom);
+}
 
 const addKeyListeners = () => {
   document.addEventListener('keydown', event => {
@@ -115,10 +147,20 @@ const addPlayPauseListener = () => {
   stepButton.addEventListener("click", event => step());
 }
 
-cpu.load_rom(await loadRom());
+const addRomListener = () => {
+  ROMS.forEach(rom => {
+    let opt = document.createElement('option');
+    opt.value = rom;
+    opt.innerHTML = rom.toLowerCase();
+    roms.appendChild(opt);
+  });
+  roms.addEventListener("change", e => { loadRom(e.target.value); });
+}
+
 drawScreen();
 addKeyListeners();
 addPlayPauseListener();
+addRomListener();
 pause();
 
 }
