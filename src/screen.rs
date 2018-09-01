@@ -4,18 +4,13 @@ pub struct Screen {
     pixels: [u64; 32],
 }
 
-/// Return the byte of the row of pixels that would be overwritten by a sprite
-/// with the specified width at index x. Assumes that the sprite would be in bounds.
-/// Intuitively, this shifts the row so that the affected byte can be compared
-/// to the sprite row
-fn get_old_byte(row: u64, x: usize, sprite_width: usize) -> u8 {
-    (row >> (64 - sprite_width - x)) as u8
-}
-
-/// Given a sprite row with 8 pixels, shift it to create a mask that can be
-/// applied to a row of pixels of size 64
 fn get_mask(sprite_row: u8, x: usize) -> u64 {
-    (sprite_row as u64) << (56 - x)
+    let sprite_row = sprite_row as u64;
+    if x > 56 {
+        sprite_row.rotate_right((x - 56) as u32)
+    } else {
+        sprite_row << (56 - x)
+    }
 }
 
 // TODO: bounds checking on usize inputs
@@ -39,20 +34,18 @@ impl Screen {
     /// Draw the provided sprite with the top left corner at (x, y).
     /// If the sprite would be clipped, it does not get drawn (TODO: wrap instead)
     pub fn draw_sprite(&mut self, x: usize, y: usize, sprite: &[u8]) -> bool {
-        let sprite_height = sprite.len();
-        let sprite_width = 8;
-
-        if x + sprite_width > 64 || y + sprite_height > 32 {
+        // TODO: return Result?
+        if x > 63 || y > 31 {
             return false
         }
 
         let mut collision = false;
-        for i in 0..sprite_height {
-            // any bit being set means that we would be unsetting a set pixel
-            let overwritten_bits = 
-                get_old_byte(self.pixels[i + y], x, sprite_width) & sprite[i];
-            collision = collision || overwritten_bits > 0;
-            self.pixels[i + y] ^= get_mask(sprite[i], x);
+        for i in 0..sprite.len() {
+            let row = (y + i) % 32;
+            let sprite_mask = get_mask(sprite[i], x);
+            let matched_bits = self.pixels[row] & sprite_mask;
+            collision = collision || matched_bits > 0;
+            self.pixels[row] ^= sprite_mask;
         }
 
         collision
@@ -74,21 +67,13 @@ mod test {
     }
 
     #[test]
-    fn old_byte() {
-        // rightmost byte
-        assert_eq!(get_old_byte(17, 56, 8), 17);
-        // leftmost byte
-        assert_eq!(get_old_byte(17 << 56, 0, 8), 17);
-        // somewhere in between
-        assert_eq!(get_old_byte(255, 52, 8), 15);
-    }
-
-    #[test]
     fn mask() {
         // mask for lefmost byte
         assert_eq!(get_mask(1 << 7, 0), 1 << 63);
         // mask for rightmost byte
         assert_eq!(get_mask(5, 56), 5);
+        // wrapping mask
+        assert_eq!(get_mask(0b00011000, 60), ((1 << 63) + 1));
     }
 
     #[test]
@@ -108,22 +93,29 @@ mod test {
     }
 
     #[test]
-    fn sprite_oob() {
+    fn sprite_wrap_y() {
         let mut screen = Screen::new();
-        assert!(!screen.draw_sprite(57, 3, &[1, 2, 3, 4]));
-        for i in 3..7 {
-            assert_eq!(screen.pixels[i], 0);
-        }
-        
-        assert!(!screen.draw_sprite(5, 29, &[1, 2, 3, 4]));
-        for i in 5..9 {
-            assert_eq!(screen.pixels[i], 0);    
-        }
+        // should wrap so that bottom 2 and top 2 rows are written to
+        assert!(!screen.draw_sprite(0, 30, &[255, 255, 255, 255]));
+        assert_eq!(screen.pixels[0] >> 56, 255);
+        assert_eq!(screen.pixels[1] >> 56, 255);
+        assert_eq!(screen.pixels[30] >> 56, 255);
+        assert_eq!(screen.pixels[31] >> 56, 255);
+    }
+
+    #[test]
+    fn sprite_wrap_x() {
+        let mut screen = Screen::new();
+        assert!(!screen.draw_sprite(60, 0, &[0b00111100]));
+        // should wrap so that left 2 and right 2 columns are written to
+        let expected_row = (1 << 63) + (1 << 62) + 3;
+        assert_eq!(screen.pixels[0], expected_row);
     }
 
     #[test]
     fn sprite_y() {
         let mut screen = Screen::new();
+        // test that the y index and sprite index are different
         screen.draw_sprite(5, 10, &[1]);
     }
 }
